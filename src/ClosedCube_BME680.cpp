@@ -29,7 +29,6 @@ THE SOFTWARE.
 */
 
 
-#include <Wire.h>
 #include "ClosedCube_BME680.h"
 
 
@@ -46,10 +45,11 @@ void ClosedCube_BME680::init(uint8_t address) {
 }
 
 uint8_t ClosedCube_BME680::reset() {
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_RESET);
-	Wire.write(BME680_SOFT_RESET_CMD);
-	return Wire.endTransmission();
+	uint8_t wdata[] = {
+		BME680_REG_RESET,
+		BME680_SOFT_RESET_CMD
+	};
+	return writeBytes(wdata, sizeof(wdata));
 }
 
 uint8_t ClosedCube_BME680::getChipID() {
@@ -70,10 +70,11 @@ uint8_t ClosedCube_BME680::changeMode(uint8_t mode) {
 	ctrl_meas.rawData = readByte(BME680_REG_CTRL_MEAS);
 	ctrl_meas.mode = mode;
 
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_CTRL_MEAS);
-	Wire.write(ctrl_meas.rawData);
-	return Wire.endTransmission();
+	uint8_t wdata[] = {
+		BME680_REG_CTRL_MEAS,
+		ctrl_meas.rawData
+	};
+	return writeBytes(wdata, sizeof(wdata));
 }
 
 ClosedCube_BME680_Status ClosedCube_BME680::readStatus() {
@@ -86,22 +87,25 @@ ClosedCube_BME680_Status ClosedCube_BME680::readStatus() {
 uint8_t ClosedCube_BME680::setGasOn(uint16_t heaterTemperature, uint16_t heaterDuration) {
 	uint8_t result;
 
-	Wire.beginTransmission(_address);
-	Wire.write(0x5A);
-	Wire.write(calculateHeaterTemperature(heaterTemperature));
-	Wire.write(0x64);
-	Wire.write(calculateHeaterDuration(heaterDuration));
-	result = Wire.endTransmission();
+	uint8_t wdata1[] = {
+		0x5A,
+		calculateHeaterTemperature(heaterTemperature),
+		0x64,
+		calculateHeaterDuration(heaterDuration)
+	};
+	result = writeBytes(wdata1, sizeof(wdata1));
 
 	ClosedCube_BME680_Heater_Profile profile;
 	profile.nb_conv = 0;
 	profile.run_gas = 1;
 
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_CTRL_GAS);
-	Wire.write(profile.rawData);
-	return result & Wire.endTransmission();
+	uint8_t wdata2[] = {
+		BME680_REG_CTRL_GAS,
+		profile.rawData
+	};
+	result &= writeBytes(wdata2, sizeof(wdata2));
 
+	return result;
 }
 
 uint8_t ClosedCube_BME680::setGasOff() {
@@ -109,10 +113,11 @@ uint8_t ClosedCube_BME680::setGasOff() {
 	profile.nb_conv = 0;
 	profile.run_gas = 0;
 
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_CTRL_GAS);
-	Wire.write(profile.rawData);
-	return Wire.endTransmission();
+	uint8_t wdata[] = {
+		BME680_REG_CTRL_GAS,
+		profile.rawData
+	};
+	return writeBytes(wdata, sizeof(wdata));
 }
 
 
@@ -226,22 +231,24 @@ uint8_t ClosedCube_BME680::setOversampling(ClosedCube_BME680_Oversampling humidi
 	ctrl_meas.osrs_p = pressure;
 	ctrl_meas.mode = 0x0;
 
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_CTRL_HUM);
-	Wire.write(humidity);
-	Wire.write(BME680_REG_CTRL_MEAS);
-	Wire.write(ctrl_meas.rawData);
-	return Wire.endTransmission();
+	uint8_t wdata[] = {
+		BME680_REG_CTRL_HUM,
+		humidity,
+		BME680_REG_CTRL_MEAS,
+		ctrl_meas.rawData,
+	};
+	return writeBytes(wdata, sizeof(wdata));
 }
 
 uint8_t ClosedCube_BME680::setIIRFilter(ClosedCube_BME680_IIRFilter filter) {
 	ClosedCube_BME680_Config_Register config;
 	config.filter = filter;
 
-	Wire.beginTransmission(_address);
-	Wire.write(BME680_REG_CONFIG);
-	Wire.write(config.rawData);
-	return Wire.endTransmission();
+	uint8_t wdata[] = {
+		BME680_REG_CONFIG,
+		config.rawData,
+	};
+	return writeBytes(wdata, sizeof(wdata));
 }
 
 uint8_t ClosedCube_BME680::calculateHeaterTemperature(uint16_t heaterTemperature) {
@@ -281,12 +288,9 @@ uint8_t ClosedCube_BME680::calculateHeaterDuration(uint16_t heaterDuration)
 }
 
 uint8_t ClosedCube_BME680::readByte(uint8_t cmd) {
-	Wire.beginTransmission(_address);
-	Wire.write(cmd);
-	Wire.endTransmission();
-
-	Wire.requestFrom(_address, (uint8_t)1);
-	return Wire.read();
+	uint8_t result;
+	readBytes(cmd, &result, 1);
+	return result;
 }
 
 
@@ -294,19 +298,9 @@ uint8_t ClosedCube_BME680::loadCalData() {
 	uint8_t cal1[25];
 	uint8_t cal2[16];
 
-	Wire.beginTransmission(_address);
-	Wire.write(0x89);
-	Wire.endTransmission();
+	readBytes(0x89, cal1, 25);
 
-	Wire.requestFrom(_address, (uint8_t)25);
-	Wire.readBytes(cal1, 25);
-
-	Wire.beginTransmission(_address);
-	Wire.write(0xE1);
-	Wire.endTransmission();
-
-	Wire.requestFrom(_address, (uint8_t)16);
-	Wire.readBytes(cal2, 16);
+	readBytes(0xE1, cal2, 16);
 
 	_calib_temp.t1 = cal2[9] << 8 | cal2[8];
 	_calib_temp.t2 = cal1[2] << 8 | cal1[1];

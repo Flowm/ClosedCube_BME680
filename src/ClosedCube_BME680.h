@@ -32,7 +32,7 @@ THE SOFTWARE.
 #ifndef _CLOSEDCUBE_BME680_h
 
 #define _CLOSEDCUBE_BME680_h
-#include <Arduino.h>
+#include <cstdint>
 
 #define BME680_REG_CTRL_GAS		0x71
 #define BME680_REG_CTRL_HUM		0x72
@@ -169,7 +169,7 @@ public:
 	double readPressure();
 	uint32_t readGasResistance();
 
-private:
+protected:
 	uint8_t _address;
 	uint8_t _chipID;
 
@@ -192,6 +192,8 @@ private:
 	uint8_t loadCalData();
 
 	uint8_t readByte(uint8_t cmd);
+	virtual void readBytes(uint8_t cmd, uint8_t* rdata, uint8_t len)  = 0;
+	virtual uint8_t writeBytes(uint8_t* data, uint8_t len) = 0;
 	uint8_t changeMode(uint8_t mode);
 
 	uint8_t calculateHeaterDuration(uint16_t heaterDuration);

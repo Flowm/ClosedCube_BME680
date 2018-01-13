@@ -17,9 +17,9 @@ MIT License
 **************************************************************************************/
 
 #include <Wire.h>
-#include "ClosedCube_BME680.h"
+#include "ClosedCube_BME680_Arduino.h"
 
-ClosedCube_BME680 bme680;
+ClosedCube_BME680_Arduino bme680;
 
 void setup()
 {
