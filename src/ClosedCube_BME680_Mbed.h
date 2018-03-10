@@ -40,7 +40,7 @@ THE SOFTWARE.
 class ClosedCube_BME680_Mbed : public ClosedCube_BME680 {
 
 public:
-    ClosedCube_BME680_Mbed(SPI &spi, DigitalOut &cs) :
+    ClosedCube_BME680_Mbed(SPI* spi, DigitalOut* cs) :
         spi(spi),
         cs(cs)
     {
@@ -58,8 +58,8 @@ private:
 
     uint8_t mem_page_cur;
 
-    SPI& spi;
-    DigitalOut& cs;
+    SPI* spi;
+    DigitalOut* cs;
 };
 
 #endif
