@@ -47,10 +47,12 @@ void ClosedCube_BME680_Mbed::readBytes(uint8_t cmd, uint8_t* rdata, uint8_t len)
 	// SPI register reads have the msb set
 	cmd = cmd | 0x80;
 
+	spi.lock();
 	cs = 0;
 	spi.write((char*) &cmd, 1, NULL, 0);
 	spi.write(NULL, 0, (char*) rdata, len);
 	cs = 1;
+	spi.unlock();
 }
 
 uint8_t ClosedCube_BME680_Mbed::writeBytes(uint8_t* data, uint8_t len) {
@@ -61,9 +63,11 @@ uint8_t ClosedCube_BME680_Mbed::writeBytes(uint8_t* data, uint8_t len) {
 	// SPI register writes have the msb unset
 	data[0] = data[0] & 0x7F;
 
+	spi.lock();
 	cs = 0;
 	spi.write((char*) data, len, NULL, 0);
 	cs = 1;
+	spi.unlock();
 
 	return 0;
 }
